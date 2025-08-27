@@ -4,7 +4,6 @@
 
 #include "ThreadPool.h"
 #include "RedisSubscriber.h"
-#include "EventDataExtractor.h"
 
 using namespace std;
 
@@ -12,7 +11,6 @@ class TriangulationService
 {
     private:
         RedisSubscriber sensorsSubscriber;
-        EventDataExtractor eventDataExtractor;
         ThreadPool theradPool;
         //sensors
 
@@ -27,7 +25,7 @@ class TriangulationService
 
     public:
         
-        TriangulationService() {}
+        TriangulationService();
 
         //??
 };

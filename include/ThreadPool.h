@@ -5,7 +5,6 @@
 #include <queue>
 #include <condition_variable>
 
-#include <TriangulationService.h>
 #include <TriangulationTask.h>
 
 using namespace std;
@@ -13,7 +12,7 @@ using namespace std;
 class ThreadPool
 {
     private:
-        queue <TriangulationTask> tasks;
+        queue <Task> tasks;
         vector <thread> threads;
         atomic <bool> work_flag;
         int count_of_threads;
@@ -24,9 +23,8 @@ class ThreadPool
 
         ThreadPool(int n);
         ~ThreadPool();
-        void start();
         void worker();
-        void addTask(TriangulationTask &task);
+        void addTask(Task &task);
         void finishAllThreads();
 };
 

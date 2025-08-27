@@ -2,15 +2,29 @@
 #include "Triangulator.h"
 #include <vector>
 
-class TriangulationTask
+#include "RedisSubscriber.h"
+#include "Triangulator.h"
+#include "DataFormat.h"
+
+using namespace std;
+
+class Task
+{
+    public:
+        virtual void execute() = 0;
+
+        virtual ~Task() = default;
+};
+
+
+class TriangulationTask : public Task
 {
     private:
-        RedisPublisher publisher;
+        RedisSubscriber subscriber;
         Triangulator triangulator;
-        std::vector <double> eventsData;
+        string eventsData;
     public:
-        void execute()
-        {
 
-        }
+        TriangulationTask(string host, int port, string topic);
+        void execute();
 };

@@ -6,6 +6,7 @@
 #include <condition_variable>
 
 #include "../include/ThreadPool.h"
+#include "../include/TriangulationTask.h"
 
 using namespace std;
 
@@ -24,18 +25,19 @@ void ThreadPool::worker()
 {
     while(work_flag)
     {   
+        Task *task;
         unique_lock<mutex> lock(mtx);
         cv.wait(lock, [this]{ return !tasks.empty() || !work_flag; });
         if(tasks.empty() && !work_flag) break;
 
-        TriangulationTask task = move(tasks.front());
+        *task = move(tasks.front());
         tasks.pop();
         lock.unlock();
-        task.execute();
+        (*task).execute();
     }
 }
 
-void ThreadPool::addTask(TriangulationTask &task)
+void ThreadPool::addTask(Task &task)
 {
     lock_guard<mutex> lock(mtx);
     tasks.push(task);
