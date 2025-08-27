@@ -1,7 +1,7 @@
 #include <iostream>
+#include <set>
+#include <vector>
 #include <hiredis/hiredis.h>
-
-#include "DataFormat.h"
 
 using namespace std;
 
@@ -9,17 +9,14 @@ class RedisSubscriber
 {
     private:
         redisContext* context;
-        redisReply* channel_reply;
+        vector <string> topics;
     public:
 
         RedisSubscriber() {}
-
-        RedisSubscriber(string host, int port, string channel_name);
-        
+        RedisSubscriber(string host, int port);
         ~RedisSubscriber() {
             redisFree(context);
-            freeReplyObject(channel_reply);
         }
-
-        string listen();
+        set <string> listen();
+        vector <string> updateTopics();
 };
