@@ -1,5 +1,6 @@
 #include <TriangulationService.h>
 #include <TriangulationTask.h>
+#include <thread>
 
 class ThreadPool
 {

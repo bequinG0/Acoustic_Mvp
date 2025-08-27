@@ -35,23 +35,19 @@ class RedisSubscriber
 
         string listen()
         {
-            while(true)
+            string message_str = "";
+            redisReply* message_repl = nullptr;
+            if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
             {
-                string message_str = "";
-                redisReply* message_repl = nullptr;
-                if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
+                if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
                 {
-                    if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
-                    {
-                        string action = (*(*message_repl).element[0]).str,
-                        topic_name = (*(*message_repl).element[1]).str;
-                        message_str = (*(*message_repl).element[2]).str;
+                    string action = (*(*message_repl).element[0]).str,
+                    topic_name = (*(*message_repl).element[1]).str;
+                    message_str = (*(*message_repl).element[2]).str;
 
-                    }
-                    freeReplyObject(message_repl);
                 }
-                return message_str;
+                freeReplyObject(message_repl);
             }
-            return "ERR\n";
+            return message_str;
         }
 };
