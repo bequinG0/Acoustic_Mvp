@@ -13,11 +13,7 @@ int main()
     RedisSubscriber subscriber("localhost", 6379, "news");
     while(true)
     {
-        char button = getchar();
-        if(button == '1') break;
-
         string message = subscriber.listen();
         cout << "[**] Получено новое сообщение: " << message << "\n";
     }
-    ~RedisPublisher subscriber;
 }
