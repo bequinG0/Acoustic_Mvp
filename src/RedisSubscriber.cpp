@@ -9,7 +9,18 @@
 using namespace std;
 using json = nlohmann::json;
 
-string arr2str();
+set <string> parser(json data)
+{
+    set <string> result;
+    return result;
+}
+
+template <typename T>
+void output(vector <T> a)
+{
+    for (int i=0; i<a.size(); i++) cout << a[i] << " ";
+    cout << "\n";
+}
 
 RedisSubscriber::RedisSubscriber(string host, int port)
 {   
@@ -27,7 +38,32 @@ RedisSubscriber::RedisSubscriber(string host, int port)
         cout << "[ER] Ошибка подписки\n";
     }
     else cout << "[**] Вы подписались на канал\n";
+    string message_str = "";
+    redisReply* message_repl = nullptr;
+    if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
+    {
+        if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
+        {
+            string action = (*(*message_repl).element[0]).str,
+            topic_name = (*(*message_repl).element[1]).str;
+            message_str = (*(*message_repl).element[2]).str;
+        }
+        freeReplyObject(message_repl);
+    }
     freeReplyObject(channel_reply);
+    json data = json::parse(message_str);
+    for(auto e : data["sensors"]) topics.push_back(e["mac"]);
+    for(auto e : topics)
+    {
+        string channel_name = "SUBSCRIBE " + e;
+        redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
+        if(channel_reply == nullptr) 
+        {
+            cout << "[ER] Ошибка подписки\n";
+        }
+        else cout << "[**] Вы подписались на канал " + e + "\n";
+        freeReplyObject(channel_reply);
+    }
 }
     
 
@@ -46,12 +82,7 @@ set <string> RedisSubscriber::listen()
         freeReplyObject(message_repl);
     }
     json data = json::parse(message_str);
-    set <string> result;
-    result.insert(data["mac"]);
-    result.insert(data["timestamp"]);
-    result.insert(data["class"]);
-    result.insert(to_string(data["power"]));
-    result.insert(to_string(data["probs"]));
+    set <string> result = parser(data);
     return result;     
 }
 
