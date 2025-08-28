@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.m": "octave",
+        "string": "cpp",
+        "format": "cpp"
+    }
+}
