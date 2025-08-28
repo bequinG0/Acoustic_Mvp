@@ -1,5 +1,4 @@
 #include <iostream>
-
 #include <hiredis/hiredis.h>
 
 using namespace std;

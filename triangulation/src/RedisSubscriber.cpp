@@ -17,7 +17,7 @@ set <string> parser(json data)
     result.insert(to_string(data["avg_volume"]));
     result.insert(data["class"]);
     result.insert(data["timestamp"]);
-    result.insert(data["probs"]);
+    result.insert(to_string(data["probs"]));
     return result;
 }
 
@@ -39,14 +39,15 @@ RedisSubscriber::RedisSubscriber(string host, int port)
     else cout << "[**] Вы подключились к redis\n";
 }
 
-void RedisSubscriber::subscribe(string topics)
+void RedisSubscriber::subscribe(string topic)
 {
-    redisReply* channel_reply = (redisReply*) redisCommand(context, "SUBSCRIBE update_sensors");
+    string channel_name = "SUBSCRIBE " + topic;
+    redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
     if(channel_reply == nullptr) 
     {
         cout << "[ER] Ошибка подписки\n";
     }
-    else cout << "[**] Вы подписались на канал\n";
+    else cout << "[**] Вы подписались на канал " + topic + "\n";
     freeReplyObject(channel_reply);
 }
 
