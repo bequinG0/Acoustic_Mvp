@@ -1,7 +1,9 @@
 #include <iostream>
-#include <termios.h>
-#include <unistd.h>
 #include <vector>
+#include <set>
+#include <thread>
+#include <mutex>
+#include <atomic>
 #include <hiredis/hiredis.h>
 #include <nlohmann/json.hpp>
 
@@ -15,11 +17,6 @@ using json = nlohmann::json;
 int main()
 {
     RedisSubscriber subscriber("localhost", 6379);
-    while(true)
-    {
-        set <string> message = subscriber.listen();
-        for(auto e : message) cout << e << " ";
-        cout << "\n";
-    }
+    
 
 }
