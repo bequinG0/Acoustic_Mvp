@@ -37,43 +37,20 @@ RedisSubscriber::RedisSubscriber(string host, int port)
         exit(1);                
     }
     else cout << "[**] Вы подключились к redis\n";
-    
+}
+
+void RedisSubscriber::subscribe(string topics)
+{
     redisReply* channel_reply = (redisReply*) redisCommand(context, "SUBSCRIBE update_sensors");
     if(channel_reply == nullptr) 
     {
         cout << "[ER] Ошибка подписки\n";
     }
     else cout << "[**] Вы подписались на канал\n";
-    string message_str = "";
-    redisReply* message_repl = nullptr;
-    if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
-    {
-        if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
-        {
-            string action = (*(*message_repl).element[0]).str,
-            topic_name = (*(*message_repl).element[1]).str;
-            message_str = (*(*message_repl).element[2]).str;
-        }
-        freeReplyObject(message_repl);
-    }
     freeReplyObject(channel_reply);
-    json data = json::parse(message_str);
-    for(auto e : data["sensors"]) topics.push_back(e["mac"]);
-    for(auto e : topics)
-    {
-        string channel_name = "SUBSCRIBE " + e;
-        redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
-        if(channel_reply == nullptr) 
-        {
-            cout << "[ER] Ошибка подписки\n";
-        }
-        else cout << "[**] Вы подписались на канал " + e + "\n";
-        freeReplyObject(channel_reply);
-    }
 }
-    
 
-set <string> RedisSubscriber::listen()
+vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
 {
     string message_str = "";
     redisReply* message_repl = nullptr;
@@ -90,12 +67,47 @@ set <string> RedisSubscriber::listen()
     try
     {
         json data = json::parse(message_str);
-        
+        vector <Sensor> sensors;
+        for(auto e : data["sensors"]) 
+        {
+            topics.push_back(e["mac"]);
+            Sensor temp;
+            temp.mac = e["mac"]; temp.name = e["name"];
+            temp.x = e["x"]; temp.y = e["y"];
+            sensors.push_back(temp);
+        }
+        for(auto e : topics) subscriber.subscribe(e);
+        return sensors;
+    }
+    catch(js_err& err)
+    {
+        return vector <Sensor>();
+    }
+}
+
+set <string> RedisSubscriber::sensor_listen()
+{
+    string message_str = "";
+    redisReply* message_repl = nullptr;
+    if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
+    {
+        if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
+        {
+            string action = (*(*message_repl).element[0]).str,
+            topic_name = (*(*message_repl).element[1]).str;
+            message_str = (*(*message_repl).element[2]).str;
+        }
+        freeReplyObject(message_repl);
+    }
+    try
+    {   
+        json data = json::parse(message_str);
         set <string> result = parser(data);
         return result;
     }
     catch(js_err& err)
     {
-        return {message_str};
-    }        
+        return {"[ERR] err js format"};
+    }
+            
 }
