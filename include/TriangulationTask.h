@@ -4,7 +4,6 @@
 
 #include "RedisSubscriber.h"
 #include "Triangulator.h"
-#include "DataFormat.h"
 
 using namespace std;
 

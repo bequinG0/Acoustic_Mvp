@@ -8,10 +8,16 @@
 
 using namespace std;
 using json = nlohmann::json;
+using js_err = json::parse_error;
 
 set <string> parser(json data)
 {
-    set <string> result;
+    set <string> result = {};
+    result.insert(data["mac"]);
+    result.insert(to_string(data["avg_volume"]));
+    result.insert(data["class"]);
+    result.insert(data["timestamp"]);
+    result.insert(data["probs"]);
     return result;
 }
 
@@ -81,18 +87,15 @@ set <string> RedisSubscriber::listen()
         }
         freeReplyObject(message_repl);
     }
-    json data = json::parse(message_str);
-    set <string> result = parser(data);
-    return result;     
-}
-
-vector <string> RedisSubscriber::updateTopics()
-{
-    vector <string> topics;
-    redisReply* reply = (redisReply*)redisCommand(context, "PUBSUB CHANNELS");
-    if((*reply).type == REDIS_REPLY_ARRAY)
+    try
     {
-        for(int i=0; i<(*reply).elements; i++) topics.push_back((*(*reply).element[i]).str);
+        json data = json::parse(message_str);
+        
+        set <string> result = parser(data);
+        return result;
     }
-    return topics;
+    catch(js_err& err)
+    {
+        return {message_str};
+    }        
 }
