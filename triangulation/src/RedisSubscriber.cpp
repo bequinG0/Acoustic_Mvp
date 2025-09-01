@@ -33,7 +33,7 @@ RedisSubscriber::RedisSubscriber(string host, int port)
     Logger logger(".log");
     context = redisConnect(host.c_str(), port);
     if(context == nullptr || (*context).err ) logger.addWriting("Ошибка подключения", 'E');               
-    else logger.addWriting("Вы подключились к каналу", 'I');
+    else logger.addWriting("Вы подключились к каналу ", 'I');
 }
 
 void RedisSubscriber::subscribe(string topic)
@@ -42,7 +42,7 @@ void RedisSubscriber::subscribe(string topic)
     string channel_name = "SUBSCRIBE " + topic;
     redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
     if(channel_reply == nullptr) logger.addWriting("Ошибка подписки", 'E');
-    else logger.addWriting("Вы подписались на канал", 'I');
+    else logger.addWriting("Вы подписались на topic " + topic, 'I');
     freeReplyObject(channel_reply);
 }
 
