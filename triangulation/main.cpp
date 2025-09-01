@@ -20,7 +20,7 @@ using json = nlohmann::json;
 int main()
 {
     RedisSubscriber listener(localhost, lo_port), updater(localhost, lo_port);
-    vector <set <string>> sensors_messages;
+    vector <vector <string>> sensors_messages;
     vector <Sensor> sensor_list;
 
     atomic <bool> running{true};
@@ -35,7 +35,7 @@ int main()
     thread listen_thread([&]()
     {
         while (running) {
-            set<string> message = listener.sensor_listen();
+            vector <string> message = listener.sensor_listen();
             {
                 lock_guard<mutex> lock(mtx);
                 sensors_messages.push_back(message);
@@ -68,7 +68,7 @@ int main()
     while (running) {
         try {
             vector<Sensor> current_sensors;
-            vector<set<string>> current_messages;
+            vector<vector <string>> current_messages;
             
             {
                 lock_guard<mutex> lock(mtx);

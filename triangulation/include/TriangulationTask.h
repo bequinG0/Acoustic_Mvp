@@ -24,12 +24,10 @@ class Task
 class TriangulationTask : public Task
 {
     private:
-        RedisSubscriber subscriber;
         Triangulator triangulator;
-        string eventsData;
     public:
 
-        TriangulationTask(vector <Sensor> sensors, vector <set <string>> sensors_messages);
+        TriangulationTask(vector <Sensor> sensors, vector <vector<string>> sensors_messages);
         void execute();
 };
 

@@ -24,7 +24,7 @@ class RedisSubscriber
         ~RedisSubscriber() {
             redisFree(context);
         }
-        set <string> sensor_listen();
+        vector <string> sensor_listen();
         void subscribe(string topic);
         vector <Sensor> updateTopics(RedisSubscriber &subscriber);
 };
