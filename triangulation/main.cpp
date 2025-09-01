@@ -7,9 +7,9 @@
 #include <hiredis/hiredis.h>
 #include <nlohmann/json.hpp>
 
-#include "../include/RedisPublisher.h"
-
-#include "../include/RedisSubscriber.h"
+#include "include/RedisPublisher.h"
+#include "include/RedisSubscriber.h"
+#include "include/ThreadPool.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -32,21 +32,25 @@ vector <Sensor> update(RedisSubscriber &updater, RedisSubscriber &listener, vect
 int main()
 {
     RedisSubscriber listener("localhost", 6379), updater("localhost", 6379);
+    vector <set <string>> sensors_messages;
     vector <Sensor> sensor_list;
+
     updater.subscribe("updated_sensors");
     sensor_list = update(updater, listener, sensor_list);
+    
+    ThreadPool task_pool(20);
+    
+    thread listen_thread, update_thread;
 
-    for(auto e : sensor_list) cout << e.mac << "\n";
-
-    set <string> message;
-    vector <set <string>> sensors_messages;
-    message = listener.sensor_listen();
-    sensors_messages.push_back(message);
-
-    for(int i=0; i<sensors_messages.size(); i++)
+    while(true)
     {
-        for(auto e : sensors_messages[i]) cout << e << " ";
-        cout << " ";
+        set <string> message;
+        message = listener.sensor_listen();
+        sensors_messages.push_back(message);
+
+        sensor_list = update(updater, listener, sensor_list);
+
+        TriangulationTask task(sensor_list, sensors_messages);
     }
 
 }

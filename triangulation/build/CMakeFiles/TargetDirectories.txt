@@ -1,3 +1,0 @@
-/home/bequ1n/sandbox/works-with-git/acoustic_mvp/triangulation/build/CMakeFiles/triangulation.dir
-/home/bequ1n/sandbox/works-with-git/acoustic_mvp/triangulation/build/CMakeFiles/edit_cache.dir
-/home/bequ1n/sandbox/works-with-git/acoustic_mvp/triangulation/build/CMakeFiles/rebuild_cache.dir

@@ -7,16 +7,10 @@
 #include <vector>
 #include <hiredis/hiredis.h>
 
-#include "../include/Logger.h"
+#include "Logger.h"
+#include "Sensor.h"
 
 using namespace std;
-
-struct Sensor
-{
-    string mac, name;
-    double x, y;
-
-};
 
 class RedisSubscriber
 {

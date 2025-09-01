@@ -9,7 +9,8 @@
 #include <queue>
 #include <condition_variable>
 
-#include <TriangulationTask.h>
+#include "TriangulationTask.h"
+#include "Sensor.h"
 
 using namespace std;
 

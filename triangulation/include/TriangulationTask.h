@@ -8,6 +8,7 @@
 
 #include "RedisSubscriber.h"
 #include "Triangulator.h"
+#include "Sensor.h"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ class TriangulationTask : public Task
         string eventsData;
     public:
 
-        TriangulationTask(string host, int port, string topic);
+        TriangulationTask(vector <Sensor> sensors, vector <set <string>> sensors_messages);
         void execute();
 };
 
