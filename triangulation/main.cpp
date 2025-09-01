@@ -11,20 +11,22 @@
 #include "include/RedisPublisher.h"
 #include "include/RedisSubscriber.h"
 #include "include/ThreadPool.h"
+#include "include/config.h"
 
 using namespace std;
+using namespace cfg;
 using json = nlohmann::json;
 
 int main()
 {
-    RedisSubscriber listener("localhost", 6379), updater("localhost", 6379);
+    RedisSubscriber listener(localhost, lo_port), updater(localhost, lo_port);
     vector <set <string>> sensors_messages;
     vector <Sensor> sensor_list;
 
     atomic <bool> running{true};
     mutex mtx;
 
-    updater.subscribe("updated_sensors");
+    updater.subscribe(update_channel);
     sensor_list = updater.updateTopics(listener);
     
     ThreadPool task_pool(20);
