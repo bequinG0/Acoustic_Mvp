@@ -2,10 +2,11 @@
 
 #include "../include/TriangulationTask.h"
 #include "../include/RedisSubscriber.h"
+#include "../include/Sensor.h"
 
 using namespace std;
 
-TriangulationTask::TriangulationTask(string host, int port, string topic)
+TriangulationTask::TriangulationTask(vector <Sensor> sensors, vector <set <string>> sensors_messages)
 {
     
 }
