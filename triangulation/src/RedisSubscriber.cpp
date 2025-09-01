@@ -10,14 +10,14 @@ using namespace std;
 using json = nlohmann::json;
 using js_err = json::parse_error;
 
-set <string> parser(json data)
+vector <string> parseJS(json data)
 {
-    set <string> result = {};
-    result.insert(data["mac"]);
-    result.insert(to_string(data["avg_volume"]));
-    result.insert(data["class"]);
-    result.insert(data["timestamp"]);
-    result.insert(to_string(data["probs"]));
+    vector <string> result = {};
+    result.push_back(data["mac"]);
+    result.push_back(to_string(data["avg_volume"]));
+    result.push_back(data["class"]);
+    result.push_back(data["timestamp"]);
+    result.push_back(to_string(data["probs"]));
     return result;
 }
 
@@ -29,25 +29,20 @@ void output(vector <T> a)
 }
 
 RedisSubscriber::RedisSubscriber(string host, int port)
-{   
+{
+    Logger logger(".log");
     context = redisConnect(host.c_str(), port);
-    if(context == nullptr || (*context).err )
-    {
-        cout << "[ER] Ошибка подключения\n";
-        exit(1);                
-    }
-    else cout << "[**] Вы подключились к redis\n";
+    if(context == nullptr || (*context).err ) logger.addWriting("Ошибка подключения", 'E');               
+    else logger.addWriting("Вы подключились к каналу ", 'I');
 }
 
 void RedisSubscriber::subscribe(string topic)
 {
+    Logger logger(".log");
     string channel_name = "SUBSCRIBE " + topic;
     redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
-    if(channel_reply == nullptr) 
-    {
-        cout << "[ER] Ошибка подписки\n";
-    }
-    else cout << "[**] Вы подписались на канал " + topic + "\n";
+    if(channel_reply == nullptr) logger.addWriting("Ошибка подписки", 'E');
+    else logger.addWriting("Вы подписались на topic " + topic, 'I');
     freeReplyObject(channel_reply);
 }
 
@@ -86,7 +81,7 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
     }
 }
 
-set <string> RedisSubscriber::sensor_listen()
+vector<string> RedisSubscriber::sensor_listen()
 {
     string message_str = "";
     redisReply* message_repl = nullptr;
@@ -103,12 +98,12 @@ set <string> RedisSubscriber::sensor_listen()
     try
     {   
         json data = json::parse(message_str);
-        set <string> result = parser(data);
+        vector <string> result = parseJS(data);
         return result;
     }
     catch(js_err& err)
     {
-        return {"[ERR] err js format"};
+        return vector <string>();
     }
             
 }

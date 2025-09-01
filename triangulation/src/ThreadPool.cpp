@@ -25,19 +25,19 @@ void ThreadPool::worker()
 {
     while(work_flag)
     {   
-        Task *task;
+        shared_ptr <Task> task;
         unique_lock<mutex> lock(mtx);
         cv.wait(lock, [this]{ return !tasks.empty() || !work_flag; });
         if(tasks.empty() && !work_flag) break;
 
-        *task = move(tasks.front());
+        task = move(tasks.front());
         tasks.pop();
         lock.unlock();
         (*task).execute();
     }
 }
 
-void ThreadPool::addTask(Task &task)
+void ThreadPool::addTask(shared_ptr <Task> task)
 {
     lock_guard<mutex> lock(mtx);
     tasks.push(task);
