@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TRIANGULATION_SERVICE_H
+#define TRIANGULATION_SERVICE_H
+
 #include <iostream>
 #include <hiredis/hiredis.h>
 #include <vector>
@@ -30,3 +34,4 @@ class TriangulationService
         //??
 };
 
+#endif //TRIANGULATION_SERVICE_H

@@ -1,3 +1,7 @@
+#pragma once
+#ifndef REDIS_PUBLISHER_H
+#define REDIS_PUBLISHER_H
+
 #include <iostream>
 #include <hiredis/hiredis.h>
 
@@ -13,3 +17,5 @@ class RedisPublisher
 
         void publish(string topic, string message);
 };
+
+#endif //REDIS_PUBLISHER_H

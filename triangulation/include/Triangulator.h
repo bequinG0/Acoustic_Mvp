@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TRIANGULATOR_H
+#define TRIANGULATOR_H
+
 #include <iostream>
 
 #include "EventSelectionStrategy.h"
@@ -13,3 +17,5 @@ class Triangulator
         }
         
 };
+
+#endif //TRIANGULATOR_H

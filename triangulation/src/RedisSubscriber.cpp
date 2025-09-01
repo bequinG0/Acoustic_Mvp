@@ -29,25 +29,20 @@ void output(vector <T> a)
 }
 
 RedisSubscriber::RedisSubscriber(string host, int port)
-{   
+{
+    Logger logger(".log");
     context = redisConnect(host.c_str(), port);
-    if(context == nullptr || (*context).err )
-    {
-        cout << "[ER] Ошибка подключения\n";
-        exit(1);                
-    }
-    else cout << "[**] Вы подключились к redis\n";
+    if(context == nullptr || (*context).err ) logger.addWriting("Ошибка подключения", 'E');               
+    else logger.addWriting("Вы подключились к каналу", 'I');
 }
 
 void RedisSubscriber::subscribe(string topic)
 {
+    Logger logger(".log");
     string channel_name = "SUBSCRIBE " + topic;
     redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
-    if(channel_reply == nullptr) 
-    {
-        cout << "[ER] Ошибка подписки\n";
-    }
-    else cout << "[**] Вы подписались на канал " + topic + "\n";
+    if(channel_reply == nullptr) logger.addWriting("Ошибка подписки", 'E');
+    else logger.addWriting("Вы подписались на канал", 'I');
     freeReplyObject(channel_reply);
 }
 
@@ -108,7 +103,7 @@ set <string> RedisSubscriber::sensor_listen()
     }
     catch(js_err& err)
     {
-        return {"[ERR] err js format"};
+        return {""};
     }
             
 }

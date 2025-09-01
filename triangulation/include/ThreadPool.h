@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TREAD_POOL_H
+#define TREAD_POOL_H
+
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -12,7 +16,7 @@ using namespace std;
 class ThreadPool
 {
     private:
-        queue <Task> tasks;
+        queue <shared_ptr <Task>> tasks;
         vector <thread> threads;
         atomic <bool> work_flag;
         int count_of_threads;
@@ -24,7 +28,8 @@ class ThreadPool
         ThreadPool(int n);
         ~ThreadPool();
         void worker();
-        void addTask(Task &task);
+        void addTask(shared_ptr<Task> task);
         void finishAllThreads();
 };
 
+#endif //TREAD_POOL_H

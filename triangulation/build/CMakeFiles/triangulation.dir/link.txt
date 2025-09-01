@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Wextra -O2 -Wl,--dependency-file=CMakeFiles/triangulation.dir/link.d CMakeFiles/triangulation.dir/main.cpp.o CMakeFiles/triangulation.dir/src/RedisPublisher.cpp.o CMakeFiles/triangulation.dir/src/RedisSubscriber.cpp.o CMakeFiles/triangulation.dir/src/ThreadPool.cpp.o CMakeFiles/triangulation.dir/src/TriangulationTask.cpp.o -o triangulation  -lhiredis

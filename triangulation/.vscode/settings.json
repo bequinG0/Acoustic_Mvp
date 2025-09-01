@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.m": "octave",
+        "atomic": "cpp",
+        "condition_variable": "cpp"
+    }
+}

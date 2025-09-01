@@ -9,7 +9,7 @@
 
 #include "../include/RedisPublisher.h"
 
-#include "../src/RedisSubscriber.cpp"
+#include "../include/RedisSubscriber.h"
 
 using namespace std;
 using json = nlohmann::json;

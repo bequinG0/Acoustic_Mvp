@@ -1,3 +1,7 @@
+#pragma once
+#ifndef TRIANGULATION_TASK_H
+#define TRIANGULATION_TASK_H
+
 #include "RedisPublisher.h"
 #include "Triangulator.h"
 #include <vector>
@@ -27,3 +31,5 @@ class TriangulationTask : public Task
         TriangulationTask(string host, int port, string topic);
         void execute();
 };
+
+#endif //TRIANGULATION_TASK_H
