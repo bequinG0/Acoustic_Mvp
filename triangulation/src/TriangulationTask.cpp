@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cmath>
+#include <tuple>
 
 #include "../include/TriangulationTask.h"
 #include "../include/RedisSubscriber.h"
@@ -18,16 +20,34 @@ int time2int (string time)
 
 TriangulationTask::TriangulationTask(vector <Sensor> sensors, vector <vector<string>> sensors_messages)
 {
-    int delta_time;
-    for(auto message : sensors_messages)
+    int delta_time = 50, temp = 0, ch = 0;
+    temp = time2int(sensors_messages[sensors_messages.size()-1][3]);
+    for(int i=sensors_messages.size()-1; i>0; i--)
     {
-        vector <int> times;
-        times.push_back(time2int(message[3]));
+        if(abs(time2int(sensors_messages[i][3]) - temp) <= delta_time) ch++;
     }
-    triangulator = Triangulator({sensors[0].x, sensors[0].y, delta_time});
+    if(ch == 3)
+    {
+        triangulator = Triangulator(make_tuple(sensors[sensors.size()-1].x, sensors[sensors.size()-1].y, 1));
+    }
+    else if(ch == 2)
+    {
+        triangulator = Triangulator(make_tuple(sensors[sensors.size()-1].x, sensors[sensors.size()-1].y, 1),
+        make_tuple(sensors[sensors.size()-2].x, sensors[sensors.size()-2].y, 1));
+    }
+    else if(ch == 1)
+    {
+        triangulator = Triangulator(make_tuple(sensors[sensors.size()-1].x, sensors[sensors.size()-1].y, 1),
+        make_tuple(sensors[sensors.size()-2].x, sensors[sensors.size()-2].y, 1),
+        make_tuple(sensors[sensors.size()-1].x, sensors[sensors.size()-1].y, 1));
+    }
+    else
+    {
+        triangulator = Triangulator();
+    }
 }
 
 void TriangulationTask::execute()
 {
-    
+    triangulator.combine();
 }
