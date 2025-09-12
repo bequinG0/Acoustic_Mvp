@@ -21,7 +21,6 @@ using namespace std;
 namespace nc = nc;
 
 const int N=50;
-const double pi = 3.14159265358979323846264438327950288;
 const int sound_speed = 343;
 
 template <typename for_out>
@@ -29,6 +28,48 @@ void output(vector <for_out> a)
 {
     for(int i=0; i<a.size(); i++) cout << a[i] << " ";
     cout << " ";
+}
+
+struct Hyper
+{
+    double a, b, alpha;
+    int o;
+
+    Hyper() {}
+    Hyper(double A, double B, double phi, int O)
+    { a = A; b = B; alpha = phi; o = O; }
+};
+
+pair <double, double> SpecialBisection(Hyper h1, Hyper h2)
+{
+    pair <double, double> result;  
+    double left = -20, right = 20, t = 0;
+    double y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
+    y_2 = -t*sin(h2.alpha) + h2.o * sqrt(h2.b) * cos(h2.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
+    x_1 = t*cos(h1.alpha) + h1.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
+    x_2 = t*cos(h2.alpha) + h2.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h2.a, 2) + 1);
+
+    while(abs(y_1 - y_2) > 0.01)
+    {
+        t = 0.5 * (left + right);
+        y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
+        y_2 = -t*sin(h2.alpha) + h2.o * sqrt(h2.b) * cos(h2.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
+        if(y_1 - y_2 > 0) right = t;
+        else if(y_1 - y_2 < 0) left = t;
+    }
+    y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1); 
+    result.second = y_1;
+    left = -20; right = 20; t = 0;
+    while(abs(x_1 - x_2) > 0.01)
+    {
+        t = 0.5 * (left + right);
+        x_1 = t*cos(h1.alpha) + h1.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
+        x_2 = t*cos(h2.alpha) + h2.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h2.a, 2) + 1);
+        if(x_1 - x_2 > 0) right = t;
+        else if(x_1 - x_2 < 0) left = t;
+    }
+    result.first = x_1;
+    return result;
 }
 
 pair <double, double> PhaseDeterminate(string pcm_data)
@@ -61,8 +102,8 @@ pair <double, double> PhaseDeterminate(string pcm_data)
         for(int n=0; n<x_n.size(); n++)
         {
             complex <double> eiphi;
-            eiphi.real(cos(2*pi*n*k/N));
-            eiphi.imag(-sin(2*pi*n*k/N));
+            eiphi.real(cos(2*M_PI*n*k/N));
+            eiphi.imag(-sin(2*M_PI*n*k/N));
             sum += x_n[n] * w[n] * eiphi;
         }
         X_n.push_back(sum);
@@ -106,35 +147,75 @@ pair <double, double> PointDeterminate(vector <vector <string>> sensors_messages
         ||sensors[2].freq_phase.second > sensors[1].freq_phase.second) sensors[2].freq_phase.second = N - sensors[2].freq_phase.second;
     } // Для того чтобы убедиться, что с бинами всё ОК, нужно проводить тесты
 
-    double delta_t1 = (sensors[0].freq_phase.first - sensors[1].freq_phase.first)/(2*pi*sensors[0].freq_phase.second);
-    double delta_t2 = (sensors[2].freq_phase.first - sensors[2].freq_phase.first)/(2*pi*sensors[1].freq_phase.second);
-        cout << sensors[0].freq_phase.second << " " << sensors[1].freq_phase.second << " " << sensors[2].freq_phase.second << "\n";
+    // Убедитесь, что разность времен вычисляется корректно
+    double delta_t1 = (sensors[0].freq_phase.first - sensors[1].freq_phase.first) / (2 * M_PI * sensors[0].freq_phase.second);
+    double delta_t2 = (sensors[0].freq_phase.first - sensors[2].freq_phase.first) / (2 * M_PI * sensors[0].freq_phase.second);
+    cout << sensors[0].freq_phase.second << " " << sensors[1].freq_phase.second << " " << sensors[2].freq_phase.second << "\n";
 
-    // Построение первой гиперболы
-    double R = sqrt(pow((one.first - two.second), 2) + pow((one.second - two.second), 2));
-    double r1 = abs(R + delta_t1 * sound_speed)*0.5;
-    double r2 = abs(R - delta_t2 * sound_speed)*0.5; //r2 < r1 всегда
+    // Нахождение параметров первой гиперболы =========================================================================
+    double R_1 = sqrt(pow((one.first - two.second), 2) + pow((one.second - two.second), 2));
+    double r1 = abs(R_1 + delta_t1 * sound_speed)*0.5;
+    double r2 = abs(R_1 - delta_t2 * sound_speed)*0.5; //r2 < r1 всегда
     /*  Находим параметры гиперболы с первых двух датчиков
-        Для начала необходимо повернуть СК чтобы найти гиперболу в перенсной СК, а затем вернуться в исходную*/
+        Для начала необходимо повернуть СК чтобы найти гиперболу в переносной СК, а затем вернуться в исходную*/
     Sensor point1(sensors[0].x, sensors[0].y), point2(sensors[1].x, sensors[1].y);
-    double alpha = atan((point1.y - point2.y)/(point1.x - point2.x)) - pi/2;
-    double b = point1.y + point1.x*(point2.y - point1.y)/(point1.x -point2.x);
-    point1.y -= b; point2.y -=b;
-    
-    nc::NdArray<double> v1 = nc::NdArray<double>({2, 1}); 
-    v1(0,0) = point1.x;
-    v1(1,0) = point1.y;
-    nc::NdArray<double> v2 = nc::NdArray<double>({2, 1}); 
-    v2(0,0) = point2.x;
-    v2(1,0) = point2.y;
+    double alpha = atan((point1.y - point2.y)/(point1.x - point2.x)) - M_PI/2;
+    double p = point1.y + point1.x*(point2.y - point1.y)/(point1.x -point2.x);
+    point1.y -= p; point2.y -=p;
+    double a = R_1/2 - r1;
+    double b = sqrt(pow(R_1, 2)/4 - pow(R_1/2 - r1, 2));
+    int orientation = 0;
+    if(sensors[0].y > sensors[1].y)
+    {
+        if(sensors_messages[0] > sensors_messages[1]) orientation = 1;
+        else orientation = -1;
+    }
+    else
+    {
+        if(sensors_messages[0] < sensors_messages[1]) orientation = 1;
+        else orientation = -1;
+    }
+    Hyper hyper1(a, b, alpha, orientation);
+
+    //Нахождение параметров второй гиперболы =========================================================================
+    double R_2 = sqrt(pow(one.first - three.first, 2) + pow(one.second - three.second, 2));
+    r1 = abs(R_2 + delta_t2 * sound_speed)*0.5;
+    r2 = abs(R_2 + delta_t2 * sound_speed)*0.5;
+    Sensor point3(sensors[0].x, sensors[0].y), point4(sensors[2].x, sensors[2].y);
+    alpha = atan((point3.y - point3.y)/(point4.x - point4.x)) - M_PI/2;
+    p = point3.y + point3.x*(point4.y - point3.y)/(point3.x -point4.x);
+    point3.y -= p; point4.y -=p;
+    a = R_2/2 - r1;
+    b = sqrt(pow(R_2, 2)/4 - pow(R_2/2 - r1, 2));
+    orientation = 0;
+    if(sensors[0].y > sensors[2].y)
+    {
+        if(sensors_messages[0] > sensors_messages[2]) orientation = 1;
+        else orientation = -1;
+    }
+    else
+    {
+        if(sensors_messages[0] < sensors_messages[2]) orientation = 1;
+        else orientation = -1;
+    }
+    Hyper hyper2(a, b, alpha, orientation);
+
+    cords = SpecialBisection(hyper1, hyper2);
+
+    /*
+    nc::NdArray<double> vec_point1 = nc::NdArray<double>({2, 1}); 
+    vec_point1(0,0) = point1.x;
+    vec_point1(1,0) = point1.y;
+    nc::NdArray<double> vec_point2 = nc::NdArray<double>({2, 1}); 
+    vec_point2(0,0) = point2.x;
+    vec_point2(1,0) = point2.y;
     nc::NdArray<double> spin = nc::NdArray<double>({2, 2});
     spin(0, 0) = cos(alpha); spin(0, 1) = -sin(alpha);
     spin(1, 0) = sin(alpha); spin(1, 1) = cos(alpha);
-    v1 = nc::dot(spin, v1); v2 = nc::dot(spin, v2);
+    vec_point1 = nc::dot(spin, vec_point1); vec_point2 = nc::dot(spin, vec_point2);
     spin = transpose(spin);
-    cout << v1(0, 0) << " " << v1(1, 0) << "\n";
-    cout << v2(0, 0) << " " << v2(1, 0) << "\n";
-
+    */
+    
     return cords;
 }
 

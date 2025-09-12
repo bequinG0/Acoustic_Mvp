@@ -15,9 +15,9 @@ vector <string> parseJS(json data)
     vector <string> result = {};
     result.push_back(data["mac"]);
     result.push_back(to_string(data["avg_volume"]));
-    result.push_back(data["class"]);
+    result.push_back(data["class"]); // PCM_data
     result.push_back(data["timestamp"]);
-    result.push_back(to_string(data["probs"]));
+    result.push_back(to_string(data["probs"])); // не надо
     return result;
 }
 
