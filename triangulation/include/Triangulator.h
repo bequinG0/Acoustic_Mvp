@@ -7,7 +7,6 @@
 #include <tuple>
 
 #include "Sensor.h"
-#include "EventSelectionStrategy.h"
 
 using namespace std;
 using Point = tuple<double, double, double>; // (x, y, s)
@@ -18,7 +17,6 @@ class Triangulator
         vector <Point> points;
 
     public:
-        EventSelectionStrategy selectionStrategy;
 
         void SetEventSelectionStrategy();
 
