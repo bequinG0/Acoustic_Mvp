@@ -29,46 +29,95 @@ void output(vector <for_out> a)
     for(int i=0; i<a.size(); i++) cout << a[i] << " ";
     cout << " ";
 }
-
 struct Hyper
 {
+    double x, y;
     double a, b, alpha;
-    int o;
+    int orient;
 
-    Hyper() {}
-    Hyper(double A, double B, double phi, int O)
-    { a = A; b = B; alpha = phi; o = O; }
+    Hyper(){}
+    Hyper(double X, double Y, double A, double B, double Alp, int O)
+    {   
+        x = X; y = Y; a = A; b = B; alpha = Alp; orient = O;
+    }
 };
 
-pair <double, double> SpecialBisection(Hyper h1, Hyper h2)
+pair <double, double> SpeicalNewton(Hyper h1, Hyper h2)
 {
-    pair <double, double> result;  
-    double left = -20, right = 20, t = 0;
-    double y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
-    y_2 = -t*sin(h2.alpha) + h2.o * sqrt(h2.b) * cos(h2.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
-    x_1 = t*cos(h1.alpha) + h1.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1),
-    x_2 = t*cos(h2.alpha) + h2.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h2.a, 2) + 1);
+    pair<double, double> result;
+    double t1 = 0.5, t2 = 0.5;
+    const double tolerance = 1e-6;
+    const int max_iterations = 100; // бывает такое, что алгоритм Ньютона для систем нелинейных уравнений плохо сходить ->> решение
 
-    while(abs(y_1 - y_2) > 0.01)
+    for (int iter = 0; iter < max_iterations; iter++) 
     {
-        t = 0.5 * (left + right);
-        y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
-        y_2 = -t*sin(h2.alpha) + h2.o * sqrt(h2.b) * cos(h2.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
-        if(y_1 - y_2 > 0) right = t;
-        else if(y_1 - y_2 < 0) left = t;
+        double x1_local = h1.x + h1.orient * h1.a * cosh(t1); // парметризация в локальной СК
+        double y1_local = h1.y + h1.b * sinh(t1);
+        double x1 = x1_local * cos(h1.alpha) - y1_local * sin(h1.alpha) + h1.x; // переход в глобальную СК
+        double y1 = x1_local * sin(h1.alpha) + y1_local * cos(h1.alpha) + h1.y;
+        
+        double x2_local = h2.x + h2.orient * h2.a * cosh(t2);
+        double y2_local = h2.y + h2.b * sinh(t2);
+        double x2 = x2_local * cos(h2.alpha) - y2_local * sin(h2.alpha) + h2.x;
+        double y2 = x2_local * sin(h2.alpha) + y2_local * cos(h2.alpha) + h2.y;
+        
+        double f1 = x1 - x2;
+        double f2 = y1 - y2;
+        
+        if (abs(f1) < tolerance && abs(f2) < tolerance) {
+            result = make_pair(x1, y1);
+            break;
+        }
+        
+        double dt = 1e-6;
+        
+        double x1p_local = h1.orient * h1.a * cosh(t1+dt);
+        double y1p_local = h1.b * sinh(t1+dt);
+        double x1p = x1p_local * cos(h1.alpha) - y1p_local * sin(h1.alpha) + h1.x;
+        double y1p = x1p_local * sin(h1.alpha) + y1p_local * cos(h1.alpha) + h1.y;
+        
+        double dx1_dt1 = (x1p - x1) / dt;
+        double dy1_dt1 = (y1p - y1) / dt;
+        
+        double x2p_local = h2.x + h2.orient * h2.a * cosh(t2+dt);
+        double y2p_local = h2. y + h2.b * sinh(t2+dt);
+        double x2p = x2p_local * cos(h2.alpha) - y2p_local * sin(h2.alpha) + h2.x;
+        double y2p = x2p_local * sin(h2.alpha) + y2p_local * cos(h2.alpha) + h2.y;
+        
+        double dx2_dt2 = (x2p - x2) / dt;
+        double dy2_dt2 = (y2p - y2) / dt;
+        
+        double J[2][2] = { // Вычисления определителя матрицы Якоби, для итерационного метода
+            {dx1_dt1, -dx2_dt2},
+            {dy1_dt1, -dy2_dt2}
+        };
+        
+        double det = J[0][0] * J[1][1] - J[0][1] * J[1][0];
+        
+        if (abs(det) < 1e-12) {
+            t1 -= 0.01 * f1;
+            t2 -= 0.01 * f2;
+        } else {
+            double invJ[2][2] = {
+                {J[1][1]/det, -J[0][1]/det},
+                {-J[1][0]/det, J[0][0]/det}
+            };
+            
+            double dt1 = -(invJ[0][0] * f1 + invJ[0][1] * f2);
+            double dt2 = -(invJ[1][0] * f1 + invJ[1][1] * f2);
+            
+            t1 += dt1;
+            t2 += dt2;
+        }
     }
-    y_1 = -t * sin(h1.alpha) + h1.o * sqrt(h1.b)*cos(h1.alpha) *sqrt(pow(t, 2)/pow(h1.a, 2) + 1); 
-    result.second = y_1;
-    left = -20; right = 20; t = 0;
-    while(abs(x_1 - x_2) > 0.01)
-    {
-        t = 0.5 * (left + right);
-        x_1 = t*cos(h1.alpha) + h1.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h1.a, 2) + 1);
-        x_2 = t*cos(h2.alpha) + h2.o * sqrt(h1.b) * sin(h1.alpha) * sqrt(pow(t, 2)/pow(h2.a, 2) + 1);
-        if(x_1 - x_2 > 0) right = t;
-        else if(x_1 - x_2 < 0) left = t;
-    }
-    result.first = x_1;
+
+    double x1_local = h1.orient * h1.a * cosh(t1);
+    double y1_local = h1.b * sinh(t1);
+    result = make_pair(
+        x1_local * cos(h1.alpha) - y1_local * sin(h1.alpha) + h1.x,
+        x1_local * sin(h1.alpha) + y1_local * cos(h1.alpha) + h1.y
+    );
+
     return result;
 }
 
@@ -153,7 +202,7 @@ pair <double, double> PointDeterminate(vector <vector <string>> sensors_messages
     cout << sensors[0].freq_phase.second << " " << sensors[1].freq_phase.second << " " << sensors[2].freq_phase.second << "\n";
 
     // Нахождение параметров первой гиперболы =========================================================================
-    double R_1 = sqrt(pow((one.first - two.second), 2) + pow((one.second - two.second), 2));
+    double R_1 = sqrt(pow((one.first - two.first),2) + pow((one.second - two.second), 2));
     double r1 = abs(R_1 + delta_t1 * sound_speed)*0.5;
     double r2 = abs(R_1 - delta_t2 * sound_speed)*0.5; //r2 < r1 всегда
     /*  Находим параметры гиперболы с первых двух датчиков
@@ -175,7 +224,7 @@ pair <double, double> PointDeterminate(vector <vector <string>> sensors_messages
         if(sensors_messages[0] < sensors_messages[1]) orientation = 1;
         else orientation = -1;
     }
-    Hyper hyper1(a, b, alpha, orientation);
+    Hyper hyper1(0.5*(point1.x + point2.x), 0.5*(point1.y + point2.y), a, b, alpha, orientation);
 
     //Нахождение параметров второй гиперболы =========================================================================
     double R_2 = sqrt(pow(one.first - three.first, 2) + pow(one.second - three.second, 2));
@@ -198,23 +247,9 @@ pair <double, double> PointDeterminate(vector <vector <string>> sensors_messages
         if(sensors_messages[0] < sensors_messages[2]) orientation = 1;
         else orientation = -1;
     }
-    Hyper hyper2(a, b, alpha, orientation);
+    Hyper hyper2(0.5*(point1.x + point3.x), 0.5*(point1.y + point3.y), a, b, alpha, orientation);
 
-    cords = SpecialBisection(hyper1, hyper2);
-
-    /*
-    nc::NdArray<double> vec_point1 = nc::NdArray<double>({2, 1}); 
-    vec_point1(0,0) = point1.x;
-    vec_point1(1,0) = point1.y;
-    nc::NdArray<double> vec_point2 = nc::NdArray<double>({2, 1}); 
-    vec_point2(0,0) = point2.x;
-    vec_point2(1,0) = point2.y;
-    nc::NdArray<double> spin = nc::NdArray<double>({2, 2});
-    spin(0, 0) = cos(alpha); spin(0, 1) = -sin(alpha);
-    spin(1, 0) = sin(alpha); spin(1, 1) = cos(alpha);
-    vec_point1 = nc::dot(spin, vec_point1); vec_point2 = nc::dot(spin, vec_point2);
-    spin = transpose(spin);
-    */
+    cords = SpeicalNewton(hyper1, hyper2);
     
     return cords;
 }
