@@ -28,6 +28,56 @@ void output(vector <T> a)
     cout << "\n";
 }
 
+vector<string> csplit(string s, char element) {
+    vector<string> str_hex;
+    
+    for(int i = 0; i < s.size(); i++) {
+        if(s[i] == element && i + 3 < s.size() && s[i+1] == 'x') {
+            // Нашли \x, теперь извлекаем два HEX символа
+            string hex_byte;
+            hex_byte += s[i+2];  // первая цифра
+            hex_byte += s[i+3];  // вторая цифра
+            str_hex.push_back(hex_byte);
+            i += 3;  // пропускаем \x и две цифры
+        }
+    }
+    return str_hex;
+}
+
+vector <int16_t> hex_to_dec(vector <string> a)
+{
+    vector <int16_t> result;
+
+    for(int i=0; i<a.size(); i+=2)
+    {
+        int temp = 0;
+        for(int j=0; j<a[i].size(); j++)
+        {
+            cout << a[i+1][j] << " " <<  2*a[i].size()-j-1 << " pows\n";
+            cout << a[i][j] << " " << a[i].size()-j-1 << " pows\n";
+
+            if(a[i+1][j] == 'A') temp += 10*pow(16, 2*a[i].size()-j-1);
+            else if(a[i+1][j] == 'B') temp += 11*pow(16, 2*a[i].size()-j-1);
+            else if(a[i+1][j] == 'C') temp += 12*pow(16, 2*a[i].size()-j-1);
+            else if(a[i+1][j] == 'D') temp += 13*pow(16, 2*a[i].size()-j-1);
+            else if(a[i+1][j] == 'E') temp += 14*pow(16, 2*a[i].size()-j-1);
+            else if(a[i+1][j] == 'F') temp += 15*pow(16, 2*a[i].size()-j-1);
+            else temp += (a[i+1][j] - '0')*pow(16, 2*a[i].size() - j -1);
+
+            if(a[i][j] == 'A') temp += 10*pow(16, a[i].size()-j-1);
+            else if(a[i][j] == 'B') temp += 11*pow(16, a[i].size()-j-1);
+            else if(a[i][j] == 'C') temp += 12*pow(16, a[i].size()-j-1);
+            else if(a[i][j] == 'D') temp += 13*pow(16, a[i].size()-j-1);
+            else if(a[i][j] == 'E') temp += 14*pow(16, a[i].size()-j-1);
+            else if(a[i][j] == 'F') temp += 15*pow(16, a[i].size()-j-1);
+            else temp += (a[i][j] - '0')*pow(16, a[i].size()-j-1);
+        }
+        cout << temp << "\n";
+        result.push_back(temp);
+    }
+    return result;
+}
+
 RedisSubscriber::RedisSubscriber(string host, int port)
 {
     Logger logger(".log");
@@ -48,6 +98,7 @@ void RedisSubscriber::subscribe(string topic)
 
 vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
 {
+    Logger logger(".log");
     string message_str = "";
     redisReply* message_repl = nullptr;
     if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
@@ -58,6 +109,7 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
             topic_name = (*(*message_repl).element[1]).str;
             message_str = (*(*message_repl).element[2]).str;
         }
+        else logger.addWriting("error redis remote", 'E');
         freeReplyObject(message_repl);
     }
     try
@@ -81,8 +133,9 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
     }
 }
 
-vector<string> RedisSubscriber::sensor_listen()
+vector <int16_t> RedisSubscriber::sensor_listen()
 {
+    Logger logger1(".log");
     string message_str = "";
     redisReply* message_repl = nullptr;
     if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
@@ -95,15 +148,19 @@ vector<string> RedisSubscriber::sensor_listen()
         }
         freeReplyObject(message_repl);
     }
-    try
-    {   
-        json data = json::parse(message_str);
-        vector <string> result = parseJS(data);
-        return result;
-    }
-    catch(js_err& err)
+    else logger1.addWriting("error redis remote", 'E');
+    if(message_str.size() % 8 != 0 )
     {
-        return vector <string>();
+        Logger logger(".log");
+        logger.addWriting("error redis message format", 'E');
+        return vector <int16_t> ();
+    }
+    else
+    {
+        vector <int16_t> result;
+        result = hex_to_dec(csplit(message_str, '\\'));
+        return result;
     }
             
 }
+
