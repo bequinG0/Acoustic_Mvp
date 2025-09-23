@@ -8,12 +8,10 @@
 #include <utility>
 #include <valarray>
 
-using namespace std;
+#include "../include/config.h"
 
-const int N = 2048;
-const int sound_speed = 343;
-const double PI = 3.14159265358979323846;
-const int Fs = 48000; // Частота дискретизации
+using namespace std;
+using namespace cfg;
 
 template <typename U>
 void output(vector <U> a)

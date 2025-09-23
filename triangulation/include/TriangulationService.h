@@ -3,35 +3,48 @@
 #define TRIANGULATION_SERVICE_H
 
 #include <iostream>
-#include <hiredis/hiredis.h>
 #include <vector>
+#include <algorithm>
+#include <string>
+#include <complex>
+#include <cmath>
+#include <fstream>
+#include <utility>
+#include <valarray>
+
+#include <hiredis/hiredis.h>
+#include <nlohmann/json.hpp>
 
 #include "ThreadPool.h"
 #include "RedisSubscriber.h"
+#include "RedisPublisher.h"
+#include "Triangulator.h"
+#include "Sensor.h"
+#include "Logger.h"
+#include "config.h"
 
 using namespace std;
+using namespace cfg;
 
 class TriangulationService
 {
     private:
-        RedisSubscriber sensorsSubscriber;
-        ThreadPool theradPool;
-        //sensors
+        RedisSubscriber updater, listener;
+        ThreadPool task_pool;
+        Logger logger;
 
-        void processEventDataRecived()
-        {
+        vector <vector <int16_t>> sensors_messages;
+        vector <Sensor> sensor_list;
 
-        }
-        void processSensorsUpdate()
-        {
-
-        }
+        atomic <bool> running{true};
 
     public:
         
         TriangulationService();
 
-        //??
+        void start();
+
+        void stop();
 };
 
 #endif //TRIANGULATION_SERVICE_H
