@@ -8,14 +8,13 @@
 
 using namespace std;
 
-struct Sensor
-{
+struct Sensor {
     string mac, name;
     double x, y;
-    pair <double, double> freq_phase;
-
+    vector <double> c;
+    
     Sensor() {}
-    Sensor(double X, double Y) {x = X; y = X; }
+    Sensor(double X, double Y) : x(X), y(Y) {}
 };
 
 #endif //SENSOR_H
