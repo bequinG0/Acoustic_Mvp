@@ -1,96 +1,79 @@
 #include <iostream>
 #include <vector>
-#include <tuple>
-#include <algorithm>
-#include <stdexcept>
-#include <vector>
 #include <algorithm>
 #include <string>
 #include <complex>
 #include <cmath>
+#include <fstream>
 #include <utility>
 #include <valarray>
 
-
-#include "../include/Hyper.h"
 #include "../include/config.h"
-#include "../include/Sensor.h"
-#include "../include/SensorMessage.h"
-#include "../include/Triangulator.h"
 
 using namespace std;
 using namespace cfg;
 
-Triangulator::Triangulator(const Point& p1) {
-    points.push_back(p1);
+template <typename U>
+void output(vector <U> a)
+{
+    for(int i=0; i<a.size(); i++) cout << a[i] << " ";
+    cout << "\n";
 }
 
-Triangulator::Triangulator(const Point& p1, const Point& p2) {
-    points.push_back(p1);
-    points.push_back(p2);
-}
+struct Sensor {
+    string mac, name;
+    double x, y;
+    vector <double> c;
+    
+    Sensor() {}
+    Sensor(double X, double Y) : x(X), y(Y) {}
+};
 
-Triangulator::Triangulator(const Point& p1, const Point& p2, const Point& p3) {
-    points.push_back(p1);
-    points.push_back(p2);
-    points.push_back(p3);
-}
-
-Point Triangulator::combine() const {
-    double s_max = 120;
-    size_t n = points.size();
-    if (n == 1) {
-        auto [x, y, s] = points[0];
-        return {x, y, 1};
+vector<int16_t> readWavFile(const string& filename) {
+    ifstream file(filename, ios::binary);
+    
+    if (!file.is_open()) {
+        throw runtime_error("Failed to open file: " + filename);
     }
-    if (n == 2) {
-        const auto& [x1, y1, s1] = points[0];
-        const auto& [x2, y2, s2] = points[1];
-        std::vector<double> s_val {s1, s2};
-        double s_min = *std::min_element(begin(s_val), end(s_val))-1;
-        double w1 = (s1-s_min) / (s_max-s_min);
-        double w2 = (s2-s_min) / (s_max-s_min);
-        double w_sum = w1 + w2;
-        if (w_sum == 0) {
-            return {0,0,0};
+
+    file.seekg(44, ios::beg);
+
+    vector<int16_t> pcmData;
+    pcmData.reserve(2048);
+    int16_t sample;
+    
+    for (int i = 0; i < 2048; i++) {
+        if (file.read(reinterpret_cast<char*>(&sample), sizeof(sample))) {
+            pcmData.push_back(sample);
+        } else {
+            break;
         }
-        double x =  (w1 * x1 + w2 * x2)/w_sum;
-        double y =  (w1 * y1 + w2 * y2)/w_sum;
-        return {x, y, 2};
     }
-    if (n == 3) {
-        const auto& [x1, y1, s1] = points[0];
-        const auto& [x2, y2, s2] = points[1];
-        const auto& [x3, y3, s3] = points[2];
-        std::vector<double> s_val {s1, s2, s3};
-        double s_min = *std::min_element(begin(s_val), end(s_val))-1;
-        double w1 = (s1-s_min) / (s_max-s_min);
-        double w2 = (s2-s_min) / (s_max-s_min);
-        double w3 = (s3-s_min) / (s_max-s_min);
-        double w_sum = w1 + w2 + w3;
-        if (w_sum == 0) {
-            return {0,0,0};
-        }
-        double x =  (w1 * x1 + w2 * x2 + w3 * x3)/w_sum;
-        double y =  (w1 * y1 + w2 * y2 + w3 * y3)/w_sum;
-        // std::cout << "triang:" << std::endl;
-        // std::cout << s1 << ";" << s2 << ";" << s3 << std::endl;
-        // std::cout << x1 << ";" << y1 << std::endl;
-        // std::cout << x2 << ";" << y2 << std::endl;
-        // std::cout << x3 << ";" << y3 << std::endl;
-        std::cout << x << ";" << y << std::endl;
-        return {x, y, 3};
-    }
-    throw std::runtime_error("Invalid number of points");
+
+    return pcmData;
 }
 
-double Triangulator::normalizePhase(double phase) {
+struct Hyper {
+    double x, y;
+    double a, b, alpha;
+    int orient;
+    
+    Hyper() {}
+    Hyper(double X, double Y, double A, double B, double Alp, int O) : 
+        x(X), y(Y), a(A), b(B), alpha(Alp), orient(O) {}
+    
+    void getvalues()
+    { cout << a << " " << b << " " << alpha << " " << orient << " " << x << " " << y << "\n";}
+};
+
+// Нормализация фазы в диапазон [-π, π]
+double normalizePhase(double phase) {
     while (phase > 2*PI) phase -= 2 * PI;
     while (phase < -2*PI) phase += 2 * PI;
     return phase;
 }
 
-pair<double, double> Triangulator::SpecialNewton(const Hyper& h1, const Hyper& h2) {
+pair<double, double> SpecialNewton(const Hyper& h1, const Hyper& h2) {
     pair<double, double> result(NAN, NAN);
 
     double t1 = 0.5, t2 = 0.5;
@@ -158,7 +141,7 @@ pair<double, double> Triangulator::SpecialNewton(const Hyper& h1, const Hyper& h
 }
 
 
-void Triangulator::fft(valarray<complex<double>>& x) {
+void fft(valarray<complex<double>>& x) {
     const size_t N = x.size();
     if (N <= 1) return;
 
@@ -175,7 +158,7 @@ void Triangulator::fft(valarray<complex<double>>& x) {
     }
 }
 
-double Triangulator::FindGlobalFreq(const vector<vector<int16_t>>& signals) {
+double FindGlobalFreq(const vector<vector<int16_t>>& signals) {
     int N = signals[0].size();
     int best_bin = 0;
     double max_amp = 0;
@@ -199,7 +182,7 @@ double Triangulator::FindGlobalFreq(const vector<vector<int16_t>>& signals) {
     return best_bin * Fs / N;
 }
 
-vector<double> Triangulator::ConstsDeterminate(const vector<int16_t>& pcm_data) {
+vector<double> ConstsDeterminate(const vector<int16_t>& pcm_data) {
     const int N = pcm_data.size();
     valarray<complex<double>> x(N);
 
@@ -229,7 +212,7 @@ vector<double> Triangulator::ConstsDeterminate(const vector<int16_t>& pcm_data) 
     return {phase, freq, amp};
 }
 
-pair<double, double> Triangulator::PointDeterminate(vector<vector<int16_t>> sensors_messages, vector<Sensor> sensors) { //##
+pair<double, double> PointDeterminate(vector<vector<int16_t>> sensors_messages, vector<Sensor> sensors) { //##
     pair<double, double> cords(0, 0);
     
     // Вычисляем фазу и частоту для каждого датчика
@@ -331,3 +314,22 @@ pair<double, double> Triangulator::PointDeterminate(vector<vector<int16_t>> sens
     return cords;
 }
 
+int main(int argc, char* argv[] ) 
+{
+    vector<Sensor> sensors;
+    sensors.push_back(Sensor(0, 17));
+    sensors.push_back(Sensor(10.16, 8.8897));
+    sensors.push_back(Sensor(0, 0));
+
+    vector<int16_t> red, green, blue;
+    red = readWavFile("./" + string(argv[1]) + "/red.wav");
+    green = readWavFile("./" + string(argv[1]) + "/green.wav");
+    blue = readWavFile("./" + string(argv[1]) + "/blue.wav");
+
+    vector<vector<int16_t>> res = {red, green, blue};
+    
+    pair<double, double> result = PointDeterminate(res, sensors);
+    cout << "Coordinates: " << result.first << ", " << result.second << endl;
+    
+    return 0;
+}

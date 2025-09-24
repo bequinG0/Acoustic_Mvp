@@ -42,3 +42,6 @@
 
 build
 .vscode
+main.cpp
+src/FTTW.cpp
+pcm_data_example.txt

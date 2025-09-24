@@ -1,41 +1,49 @@
 #include <iostream>
 #include <vector>
-#include <set>
-#include <thread>
-#include <chrono>
-#include <mutex>
-#include <atomic>
+#include <algorithm>
+#include <string>
+#include <complex>
+#include <cmath>
+#include <fstream>
+#include <utility>
+#include <valarray>
+
 #include <hiredis/hiredis.h>
 #include <nlohmann/json.hpp>
 
-#include "include/RedisPublisher.h"
-#include "include/RedisSubscriber.h"
-#include "include/ThreadPool.h"
-#include "include/config.h"
+#include "../include/TriangulationService.h"
+#include "../include/ThreadPool.h"
+#include "../include/RedisSubscriber.h"
+#include "../include/RedisPublisher.h"
+#include "../include/Triangulator.h"
+#include "../include/Sensor.h"
+#include "../include/Logger.h"
+#include "../include/config.h"
 
 using namespace std;
 using namespace cfg;
-using json = nlohmann::json;
 
-int main()
+TriangulationService::TriangulationService() : 
+    listener(localhost, port),
+    updater(localhost, port),
+    task_pool(20),
+    logger(".log")
 {
-    RedisSubscriber listener(localhost, port), updater(localhost, port);
-    vector <vector <int16_t>> sensors_messages;
-    vector <Sensor> sensor_list;
-
-    atomic <bool> running{true};
-    mutex mtx;
-
     updater.subscribe(update_channel);
     sensor_list = updater.updateTopics(listener);
-    
-    ThreadPool task_pool(20);
-    
-    // прослушивание датчиков
+}
+
+void TriangulationService::start()
+{
+    logger.addWriting("Triangulation service start successfully", 'I');
+    atomic <bool> running{true};
+    mutex mtx;
+        // прослушивание датчиков
     thread listen_thread([&]()
     {
-        while (running) {
-            vector <int16_t> message = listener.sensor_listen();
+        while (running) 
+        {
+            SensorMessage message = listener.sensor_listen();
             {
                 lock_guard<mutex> lock(mtx);
                 sensors_messages.push_back(message);
@@ -68,7 +76,7 @@ int main()
     while (running) {
         try {
             vector<Sensor> current_sensors;
-            vector<vector <int16_t>> current_messages;
+            vector <SensorMessage> current_messages;
             
             {
                 lock_guard<mutex> lock(mtx);
@@ -86,9 +94,14 @@ int main()
         }
     }
 
-    running = false;
-    listen_thread.join();
-    update_thread.join();
-
 }
 
+void TriangulationService::stop()
+{
+    running = false;
+    task_pool.finishAllThreads();
+
+    Logger logger(".log");
+    logger.addWriting("TriangulationService stopped successfully", 'I');
+    //?? а что тут писать??
+} 
