@@ -4,6 +4,7 @@
 
 #include "../include/TriangulationTask.h"
 #include "../include/RedisSubscriber.h"
+#include "../include/SensorMessage.h"
 #include "../include/Sensor.h"
 
 using namespace std;
@@ -18,14 +19,14 @@ int time2int (string time)
     return res;
 }
 
-TriangulationTask::TriangulationTask(vector <Sensor> sensors, vector <vector<string>> sensors_messages)
+TriangulationTask::TriangulationTask(vector <Sensor> sensors, vector <SensorMessage> sensors_messages)
 {
     int delta_time = 50, temp = 0; 
     vector <vector <string>> ch;
-    temp = time2int(sensors_messages[sensors_messages.size()-1][3]);
+    temp = time2int(sensors_messages[sensors_messages.size()-1].timestump);
     for(int i=sensors_messages.size()-1; i>0; i--)
     {
-        if(abs(time2int(sensors_messages[i][3]) - temp) <= delta_time) ch.push_back({sensors_messages[i][0], sensors_messages[i][3]});
+        if(abs(time2int(sensors_messages[i].timestump) - temp) <= delta_time) ch.push_back({sensors_messages[i].timestump, sensors_messages[i].timestump});
         if(ch.size() == 3) break;
     }
     if(ch.size() == 1)

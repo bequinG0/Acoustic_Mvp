@@ -15,6 +15,7 @@
 #include "../include/Hyper.h"
 #include "../include/config.h"
 #include "../include/Sensor.h"
+#include "../include/SensorMessage.h"
 #include "../include/Triangulator.h"
 
 using namespace std;

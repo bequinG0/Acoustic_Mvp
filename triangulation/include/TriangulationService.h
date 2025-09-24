@@ -20,6 +20,7 @@
 #include "RedisPublisher.h"
 #include "Triangulator.h"
 #include "Sensor.h"
+#include "SensorMessage.h"
 #include "Logger.h"
 #include "config.h"
 
@@ -33,7 +34,7 @@ class TriangulationService
         ThreadPool task_pool;
         Logger logger;
 
-        vector <vector <int16_t>> sensors_messages;
+        vector <SensorMessage> sensors_messages;
         vector <Sensor> sensor_list;
 
         atomic <bool> running{true};

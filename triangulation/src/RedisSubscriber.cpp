@@ -5,6 +5,7 @@
 #include <hiredis/hiredis.h>
 
 #include "../include/RedisSubscriber.h"
+#include "../include/SensorMessage.h"
 
 using namespace std;
 using json = nlohmann::json;
@@ -133,7 +134,7 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
     }
 }
 
-vector <int16_t> RedisSubscriber::sensor_listen()
+SensorMessage RedisSubscriber::sensor_listen()
 {
     Logger logger1(".log");
     string message_str = "";
@@ -153,12 +154,12 @@ vector <int16_t> RedisSubscriber::sensor_listen()
     {
         Logger logger(".log");
         logger.addWriting("error redis message format", 'E');
-        return vector <int16_t> ();
+        return SensorMessage();
     }
     else
     {
-        vector <int16_t> result;
-        result = hex_to_dec(csplit(message_str, '\\'));
+        SensorMessage result;
+        result.pcm_sound = hex_to_dec(csplit(message_str, '\\'));
         return result;
     }
             

@@ -12,7 +12,6 @@ namespace cfg
     const int port = 6379;
     const string update_channel = "update_sensors";
     const int count_of_pool = 20;
-    const int port = NULL;
     //Для БПФ
     const int N = 2048;
     const int sound_speed = 343;

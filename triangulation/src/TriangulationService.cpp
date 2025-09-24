@@ -41,8 +41,9 @@ void TriangulationService::start()
         // прослушивание датчиков
     thread listen_thread([&]()
     {
-        while (running) {
-            vector <int16_t> message = listener.sensor_listen();
+        while (running) 
+        {
+            SensorMessage message = listener.sensor_listen();
             {
                 lock_guard<mutex> lock(mtx);
                 sensors_messages.push_back(message);
@@ -75,7 +76,7 @@ void TriangulationService::start()
     while (running) {
         try {
             vector<Sensor> current_sensors;
-            vector<vector <int16_t>> current_messages;
+            vector <SensorMessage> current_messages;
             
             {
                 lock_guard<mutex> lock(mtx);
