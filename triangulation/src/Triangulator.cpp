@@ -16,10 +16,16 @@
 #include "../include/config.h"
 #include "../include/Sensor.h"
 #include "../include/SensorMessage.h"
+#include "../include/SensorMessage.h"
 #include "../include/Triangulator.h"
 
 using namespace std;
 using namespace cfg;
+
+Triangulator::Triangulator(vector <Sensor> sensors, vector <SensorMessage> sensors_messages)
+{
+
+}
 
 Triangulator::Triangulator(const Point& p1) {
     points.push_back(p1);
@@ -79,13 +85,13 @@ Point Triangulator::combine() const {
     throw std::runtime_error("Invalid number of points");
 }
 
-double Triangulator::normalizePhase(double phase) {
+double normalizePhase(double phase) {
     while (phase > 2*PI) phase -= 2 * PI;
     while (phase < -2*PI) phase += 2 * PI;
     return phase;
 }
 
-pair<double, double> Triangulator::SpecialNewton(const Hyper& h1, const Hyper& h2) {
+pair<double, double> SpecialNewton(const Hyper& h1, const Hyper& h2) {
     pair<double, double> result(NAN, NAN);
 
     double t1 = 0.5, t2 = 0.5;
@@ -153,7 +159,7 @@ pair<double, double> Triangulator::SpecialNewton(const Hyper& h1, const Hyper& h
 }
 
 
-void Triangulator::fft(valarray<complex<double>>& x) {
+void fft(valarray<complex<double>>& x) {
     const size_t N = x.size();
     if (N <= 1) return;
 
@@ -170,15 +176,15 @@ void Triangulator::fft(valarray<complex<double>>& x) {
     }
 }
 
-double Triangulator::FindGlobalFreq(const vector<vector<int16_t>>& signals) {
-    int N = signals[0].size();
+double FindGlobalFreq(const vector<SensorMessage>& signals) {
+    int N = signals[0].pcm_sound.size();
     int best_bin = 0;
     double max_amp = 0;
     valarray<complex<double>> x(N);
 
     for (const auto& sig : signals) {
         for (int i = 0; i < N; i++)
-            x[i] = complex<double>(sig[i] * 0.5 * (1 - cos(2*PI*i/(N-1))),0);
+            x[i] = complex<double>(sig.pcm_sound[i] * 0.5 * (1 - cos(2*PI*i/(N-1))),0);
 
         fft(x);
         x /= (double)N;
@@ -194,7 +200,7 @@ double Triangulator::FindGlobalFreq(const vector<vector<int16_t>>& signals) {
     return best_bin * Fs / N;
 }
 
-vector<double> Triangulator::ConstsDeterminate(const vector<int16_t>& pcm_data) {
+vector<double> ConstsDeterminate(const vector<int16_t>& pcm_data) {
     const int N = pcm_data.size();
     valarray<complex<double>> x(N);
 
@@ -224,12 +230,12 @@ vector<double> Triangulator::ConstsDeterminate(const vector<int16_t>& pcm_data) 
     return {phase, freq, amp};
 }
 
-pair<double, double> Triangulator::PointDeterminate(vector<vector<int16_t>> sensors_messages, vector<Sensor> sensors) { //##
+pair<double, double> Triangulator::PointDeterminate() { //##
     pair<double, double> cords(0, 0);
     
     // Вычисляем фазу и частоту для каждого датчика
     for (int i = 0; i < 3; i++) {
-        sensors[i].c = ConstsDeterminate(sensors_messages[i]);   
+        sensors[i].c = ConstsDeterminate(sensors_messages[i].pcm_sound);   
     }
     cout << sensors[0].c[1] << " " << sensors[1].c[1] << " " << sensors[2].c[1] << " freq\n";
     // Вычисляем разности фаз и нормализуем их

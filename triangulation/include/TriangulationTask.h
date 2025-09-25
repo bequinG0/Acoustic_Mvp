@@ -5,7 +5,7 @@
 #include "RedisPublisher.h"
 #include "Triangulator.h"
 #include <vector>
-#include <set>
+#include <utility>
 
 #include "RedisSubscriber.h"
 #include "Triangulator.h"
@@ -17,7 +17,7 @@ using namespace std;
 class Task
 {
     public:
-        virtual Point execute() = 0;
+        virtual void execute() = 0;
 
         virtual ~Task() = default;
 };
@@ -30,7 +30,7 @@ class TriangulationTask : public Task
     public:
 
         TriangulationTask(vector <Sensor> sensors, vector <SensorMessage> sensors_messages);
-        Point execute();
+        void execute();
 };
 
 #endif //TRIANGULATION_TASK_H

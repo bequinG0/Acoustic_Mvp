@@ -13,6 +13,7 @@
 #include <valarray>
 
 #include "Sensor.h"
+#include "SensorMessage.h"
 #include "Hyper.h"
 
 using namespace std;
@@ -23,7 +24,7 @@ class Triangulator
     private:
         vector <Point> points;
         vector <Sensor> sensors;
-        vector <vector <int16_t>> sensors_messages;
+        vector <SensorMessage> sensors_messages;
 
     public:
 
@@ -33,14 +34,15 @@ class Triangulator
         Triangulator(const Point& p1);
         Triangulator(const Point& p1, const Point& p2);
         Triangulator(const Point& p1, const Point& p2, const Point& p3);
+        Triangulator(vector <Sensor> sensors, vector <SensorMessage> sensors_messages);
 
         vector<int16_t> readWavFile(const string& filename);
-        double normalizePhase(double phase);
+        /* double normalizePhase(double phase);
         pair<double, double> SpecialNewton(const Hyper& h1, const Hyper& h2);
         void fft(valarray<complex<double>>& x);
-        double FindGlobalFreq(const vector<vector<int16_t>>& signals);
-        vector<double> ConstsDeterminate(const vector<int16_t>& pcm_data);
-        pair<double, double> PointDeterminate(vector<vector<int16_t>> sensors_messages, vector<Sensor> sensors);
+        double FindGlobalFreq(const vector<SensorMessage>& signals);
+        vector<double> ConstsDeterminate(const vector<int16_t>& pcm_data); */ 
+        pair<double, double> PointDeterminate();
 
 
         Point combine() const;

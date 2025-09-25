@@ -4,10 +4,13 @@
 
 #include "../include/TriangulationTask.h"
 #include "../include/RedisSubscriber.h"
+#include "../include/RedisPublisher.h"
 #include "../include/SensorMessage.h"
 #include "../include/Sensor.h"
+#include "../include/config.h"
 
 using namespace std;
+using namespace cfg;
 
 int time2int(const string& time) 
 {
@@ -38,55 +41,49 @@ int time2int(const string& time)
     }
 }
 
+bool compareSensor(const Sensor& a, const Sensor& b)
+{
+    return a.mac < b.mac;
+}
+
+bool compareMessage(const SensorMessage& a, const SensorMessage& b)
+{
+    return a.mac < b.mac;
+}
+
 TriangulationTask::TriangulationTask(vector <Sensor> sensors, vector <SensorMessage> sensors_messages)
 { //переписать, добавить массив messages с которыми работаем, добавить массив датчиков с которыми работаем.
     int delta_time = 100, temp = 0; 
-    vector <vector <string>> ch;
+    vector <SensorMessage> messages;
+    vector <Sensor> this_sensors;
+    /*
+    sort(sensors.begin(), sensors.end(), compareSensor);
+    sort(sensors_messages.begin(), sensors_messages.end(), compareMessage); */
     temp = time2int(sensors_messages[sensors_messages.size()-1].timestump);
-    for(int i=sensors_messages.size()-1; i>0; i--)
+    for(auto e : sensors_messages)
     {
-        if(abs(time2int(sensors_messages[i].timestump) - temp) <= delta_time) ch.push_back({sensors_messages[i].timestump, sensors_messages[i].timestump});
-        if(ch.size() == 3) break;
-    }
-    if(ch.size() == 1)
-    {
-        Sensor point;
-        for(int i=0; i<sensors.size(); i++)
+        if(abs(time2int(e.timestump) - temp) <= delta_time)
         {
-            if(sensors[i].mac == ch[0][0]) { point.x = sensors[i].x; point.y=sensors[i].y; }
+            messages.push_back(e);
         }
-        triangulator = Triangulator(make_tuple(point.x, point.y, 1));
+        if(messages.size() == 3) break;
     }
-    else if(ch.size() == 2)
+    for(auto e : messages)
     {
-        vector <Sensor> points;
-        for(int i=0; i<sensors.size(); i++)
+        for(auto k : sensors)
         {
-            if(sensors[i].mac == ch[0][0]) points.push_back(Sensor(sensors[i].x, sensors[i].y));
-            else if(sensors[i].mac == ch[1][0]) points.push_back(Sensor(sensors[i].x, sensors[i].y));
+            if(e.mac == k.mac) this_sensors.push_back(k);
         }
-        triangulator = Triangulator(make_tuple(points[0].x, points[0].y, 1),
-        make_tuple(points[1].x, points[1].y, 1));
     }
-    else if(ch.size() == 3)
-    {
-        vector <Sensor> points;
-        for(int i=0; i<sensors.size(); i++)
-        {
-            if(sensors[i].mac == ch[0][0]) points.push_back(Sensor(sensors[i].x, sensors[i].y));
-            else if(sensors[i].mac == ch[1][0]) points.push_back(Sensor(sensors[i].x, sensors[i].y));
-            else if(sensors[i].mac == ch[2][0]) points.push_back(Sensor(sensors[i].x, sensors[i].y));
-        }
-        triangulator = Triangulator(make_tuple(points[0].x, points[0].y, 1),
-        make_tuple(points[1].x, points[1].y, 1), make_tuple(points[2].x, points[2].y, 1));
-    }
-    else
-    {
-        triangulator = Triangulator();
-    }
+    if(this_sensors.size() == 3 && messages.size() == 3) Triangulator triangulator(this_sensors, messages);
+    else if(this_sensors.size() > 3 || messages.size() > 3) Triangulator triangulator({this_sensors[0], this_sensors[1], this_sensors[2]},{messages[0], messages[1], messages[2]});
+
 }
 
-Point TriangulationTask::execute()
-{
-    return triangulator.combine();
+void TriangulationTask::execute()
+{ 
+    string result = to_string(triangulator.PointDeterminate().first) + " " + to_string(triangulator.PointDeterminate().second);
+    RedisPublisher publisher(host, port, publish_channel);
+    publisher.publish(publish_channel, result);
+    
 }
