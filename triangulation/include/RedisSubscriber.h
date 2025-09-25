@@ -9,6 +9,7 @@
 
 #include "Logger.h"
 #include "Sensor.h"
+#include "SensorMessage.h"
 
 using namespace std;
 

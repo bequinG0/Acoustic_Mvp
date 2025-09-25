@@ -73,11 +73,6 @@ Point Triangulator::combine() const {
         }
         double x =  (w1 * x1 + w2 * x2 + w3 * x3)/w_sum;
         double y =  (w1 * y1 + w2 * y2 + w3 * y3)/w_sum;
-        // std::cout << "triang:" << std::endl;
-        // std::cout << s1 << ";" << s2 << ";" << s3 << std::endl;
-        // std::cout << x1 << ";" << y1 << std::endl;
-        // std::cout << x2 << ";" << y2 << std::endl;
-        // std::cout << x3 << ";" << y3 << std::endl;
         std::cout << x << ";" << y << std::endl;
         return {x, y, 3};
     }

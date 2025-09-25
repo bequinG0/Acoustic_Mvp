@@ -5,7 +5,7 @@ project(triangulation LANGUAGES CXX)
 # стандарт C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
+set(CMAKE_BUILD_TYPE Debug)
 # предупреждения и оптимизация
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
 
