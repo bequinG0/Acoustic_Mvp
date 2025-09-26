@@ -74,7 +74,7 @@ RedisSubscriber::RedisSubscriber(string host, int port)
 
 void RedisSubscriber::subscribe(string topic)
 {
-    Logger logger(".log");
+    Logger logger(".log"); cout << "!!";
     string channel_name = "SUBSCRIBE " + topic;
     redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
     if(channel_reply == nullptr) logger.addWriting("Ошибка подписки", 'E');
@@ -102,12 +102,23 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
     {
         json data = json::parse(message_str);
         vector <Sensor> sensors;
-        for(auto e : data["sensors"]) 
+        if(data.contains("sensors"))
         {
-            topics.push_back(e["mac"]);
+            for(auto e : data["sensors"]) 
+            {
+                topics.push_back(e["mac"]);
+                Sensor temp;
+                temp.mac = e["mac"];
+                temp.x = e["x"]; temp.y = e["y"];
+                sensors.push_back(temp);
+            }
+        }
+        else
+        {
+            topics.push_back(data["mac"]);
             Sensor temp;
-            temp.mac = e["mac"]; temp.name = e["name"];
-            temp.x = e["x"]; temp.y = e["y"];
+            temp.mac = data["mac"];
+            temp.x = data["x"]; temp.y = data["y"];
             sensors.push_back(temp);
         }
         for(auto e : topics) subscriber.subscribe(e);
@@ -146,6 +157,7 @@ SensorMessage RedisSubscriber::sensor_listen()
     }
     catch(js_err& err)
     {
+        cout << "!!";
         logger1.addWriting("error receiving message", 'E');
         return SensorMessage();
     }           
