@@ -11,17 +11,6 @@ using namespace std;
 using json = nlohmann::json;
 using js_err = json::parse_error;
 
-vector <string> parseJS(json data)
-{
-    vector <string> result = {};
-    result.push_back(data["mac"]);
-    result.push_back(to_string(data["avg_volume"]));
-    result.push_back(data["class"]); // PCM_data
-    result.push_back(data["timestamp"]);
-    result.push_back(to_string(data["probs"])); // не надо
-    return result;
-}
-
 template <typename T>
 void output(vector <T> a)
 {
@@ -54,9 +43,6 @@ vector <int16_t> hex_to_dec(vector <string> a)
         int temp = 0;
         for(int j=0; j<a[i].size(); j++)
         {
-            cout << a[i+1][j] << " " <<  2*a[i].size()-j-1 << " pows\n";
-            cout << a[i][j] << " " << a[i].size()-j-1 << " pows\n";
-
             if(a[i+1][j] == 'A') temp += 10*pow(16, 2*a[i].size()-j-1);
             else if(a[i+1][j] == 'B') temp += 11*pow(16, 2*a[i].size()-j-1);
             else if(a[i+1][j] == 'C') temp += 12*pow(16, 2*a[i].size()-j-1);
@@ -73,7 +59,6 @@ vector <int16_t> hex_to_dec(vector <string> a)
             else if(a[i][j] == 'F') temp += 15*pow(16, a[i].size()-j-1);
             else temp += (a[i][j] - '0')*pow(16, a[i].size()-j-1);
         }
-        cout << temp << "\n";
         result.push_back(temp);
     }
     return result;
@@ -89,7 +74,7 @@ RedisSubscriber::RedisSubscriber(string host, int port)
 
 void RedisSubscriber::subscribe(string topic)
 {
-    Logger logger(".log");
+    Logger logger(".log"); cout << "!!";
     string channel_name = "SUBSCRIBE " + topic;
     redisReply* channel_reply = (redisReply*) redisCommand(context, channel_name.c_str());
     if(channel_reply == nullptr) logger.addWriting("Ошибка подписки", 'E');
@@ -117,12 +102,23 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
     {
         json data = json::parse(message_str);
         vector <Sensor> sensors;
-        for(auto e : data["sensors"]) 
+        if(data.contains("sensors"))
         {
-            topics.push_back(e["mac"]);
+            for(auto e : data["sensors"]) 
+            {
+                topics.push_back(e["mac"]);
+                Sensor temp;
+                temp.mac = e["mac"];
+                temp.x = e["x"]; temp.y = e["y"];
+                sensors.push_back(temp);
+            }
+        }
+        else
+        {
+            topics.push_back(data["mac"]);
             Sensor temp;
-            temp.mac = e["mac"]; temp.name = e["name"];
-            temp.x = e["x"]; temp.y = e["y"];
+            temp.mac = data["mac"];
+            temp.x = data["x"]; temp.y = data["y"];
             sensors.push_back(temp);
         }
         for(auto e : topics) subscriber.subscribe(e);
@@ -137,31 +133,31 @@ vector <Sensor> RedisSubscriber::updateTopics(RedisSubscriber &subscriber)
 SensorMessage RedisSubscriber::sensor_listen()
 {
     Logger logger1(".log");
-    string message_str = "";
+    string message_str = "", topic_name = "";
     redisReply* message_repl = nullptr;
     if(redisGetReply(context, (void**)&message_repl) == REDIS_OK) 
     {
         if ((*message_repl).type == REDIS_REPLY_ARRAY && (*message_repl).elements == 3)
         {
-            string action = (*(*message_repl).element[0]).str,
+            string action = (*(*message_repl).element[0]).str;
             topic_name = (*(*message_repl).element[1]).str;
             message_str = (*(*message_repl).element[2]).str;
         }
         freeReplyObject(message_repl);
     }
-    else logger1.addWriting("error redis remote", 'E');
-    if(message_str.size() % 8 != 0 )
+    try
     {
-        Logger logger(".log");
-        logger.addWriting("error redis message format", 'E');
+        json data = json::parse(message_str);
+        SensorMessage message;
+        message.mac = topic_name;
+        message.timestump = data["time"];
+        message.pcm_sound = hex_to_dec(data["data"]);
+        return message;
+    }
+    catch(js_err& err)
+    {
+        logger1.addWriting("error receiving message", 'E');
         return SensorMessage();
-    }
-    else
-    {
-        SensorMessage result;
-        result.pcm_sound = hex_to_dec(csplit(message_str, '\\'));
-        return result;
-    }
-            
+    }           
 }
 

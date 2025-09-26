@@ -31,11 +31,11 @@ TriangulationService::TriangulationService() :
 {
     updater.subscribe(update_channel);
     sensor_list = updater.updateTopics(listener);
+    logger.addWriting("Triangulation service start successfully", 'I');
 }
 
 void TriangulationService::start()
 {
-    logger.addWriting("Triangulation service start successfully", 'I');
     atomic <bool> running{true};
     mutex mtx;
         // прослушивание датчиков
@@ -47,6 +47,11 @@ void TriangulationService::start()
             {
                 lock_guard<mutex> lock(mtx);
                 sensors_messages.push_back(message);
+            }
+            for(auto e : sensors_messages)
+            {
+                for(auto k : e.pcm_sound) cout << k;
+                cout << "\n";
             }
             this_thread::sleep_for(chrono::milliseconds(5));
         }
@@ -67,7 +72,8 @@ void TriangulationService::start()
                 lock_guard<mutex> lock(mtx);
                 sensor_list = updated_list;
             }
-            
+            for(auto e : current_sensors) cout << e.mac << " ";
+            cout << "\n";
             this_thread::sleep_for(chrono::milliseconds(5));
         }
     });
@@ -83,9 +89,12 @@ void TriangulationService::start()
                 current_sensors = sensor_list;
                 current_messages = sensors_messages;
             }
-            
-            shared_ptr<TriangulationTask> task = make_shared<TriangulationTask>(current_sensors, current_messages);
-            task_pool.addTask(task);
+            if(current_messages.size()>=3)
+            {
+                shared_ptr<TriangulationTask> task = make_shared<TriangulationTask>(current_sensors, current_messages);
+                task_pool.addTask(task);
+            }
+            else continue;
             
             this_thread::sleep_for(chrono::milliseconds(10));
             

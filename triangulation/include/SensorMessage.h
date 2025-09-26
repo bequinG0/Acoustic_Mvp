@@ -13,7 +13,7 @@ struct SensorMessage
     string mac, timestump;
     vector <int16_t> pcm_sound;
 
-    SensorMessage ();
+    SensorMessage () {};
 };
 
 #endif //SENSORSMESSAGE_H

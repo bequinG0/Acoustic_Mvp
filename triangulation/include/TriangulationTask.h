@@ -5,6 +5,7 @@
 #include "RedisPublisher.h"
 #include "Triangulator.h"
 #include <vector>
+#include <utility>
 
 #include "RedisSubscriber.h"
 #include "Triangulator.h"

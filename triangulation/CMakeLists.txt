@@ -4,9 +4,15 @@ project(triangulation_service)
 # Установка стандарта C++
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+<<<<<<< HEAD
 
 # Настройка компилятора
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
+=======
+set(CMAKE_BUILD_TYPE Debug)
+# предупреждения и оптимизация
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
+>>>>>>> fa622d58d3da00cadcd0021a92acc86a5bc517b5
 
 # Поиск необходимых пакетов
 find_package(Threads REQUIRED)
