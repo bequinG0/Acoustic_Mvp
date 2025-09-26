@@ -145,19 +145,17 @@ SensorMessage RedisSubscriber::sensor_listen()
         }
         freeReplyObject(message_repl);
     }
-    
     try
     {
         json data = json::parse(message_str);
         SensorMessage message;
         message.mac = topic_name;
-        message.timestump = data["timestump"];
-        message.pcm_sound = hex_to_dec(data["pcm_data"]);
+        message.timestump = data["time"];
+        message.pcm_sound = hex_to_dec(data["data"]);
         return message;
     }
     catch(js_err& err)
     {
-        cout << "!!";
         logger1.addWriting("error receiving message", 'E');
         return SensorMessage();
     }           
